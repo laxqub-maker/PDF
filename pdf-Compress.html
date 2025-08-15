@@ -1,0 +1,358 @@
+ <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Compress PDF - ToolKit</title>
+    
+    <!-- Google Fonts: Poppins -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    
+    <!-- Tailwind CSS for rapid UI development -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- PDF & Utility Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+
+    <!-- Cloud Storage APIs -->
+    <script src="https://apis.google.com/js/api.js"></script>
+    <script type="text/javascript" src="https://www.dropbox.com/static/api/2/dropins.js" id="dropboxjs" data-app-key="YOUR_DROPBOX_APP_KEY"></script>
+    
+    <style>
+        /* Custom styles to complement Tailwind */
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f8fafc;
+        }
+        header {
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            backdrop-filter: blur(10px);
+            background-color: rgba(255, 255, 255, 0.8);
+        }
+        .file-input-label {
+            cursor: pointer;
+            border: 2px dashed #cbd5e1;
+            padding: 2rem;
+            border-radius: 0.5rem;
+            transition: background-color 0.2s, border-color 0.2s;
+        }
+        .file-input-label:hover, .file-input-label.dragover {
+            background-color: #f1f5f9;
+            border-color: #4169e1;
+        }
+        .compression-option {
+            cursor: pointer;
+            border: 2px solid #e5e7eb;
+            transition: border-color 0.2s, background-color 0.2s;
+        }
+        .compression-option.selected {
+            border-color: #4169e1;
+            background-color: #eff6ff;
+        }
+    </style>
+</head>
+<body class="text-gray-800 flex flex-col min-h-screen">
+
+    <!-- Header -->
+    <header class="w-full border-b border-gray-200">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex-shrink-0">
+                    <a href="index.html" class="text-2xl font-bold text-[#4169e1]">ToolKit</a>
+                </div>
+                <div>
+                    <a href="index.html" class="text-gray-600 hover:text-[#4169e1] transition font-medium">Home</a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 sm:px-6 lg:px-8 py-12 flex-grow flex items-center justify-center">
+        <div class="w-full max-w-4xl text-center">
+            
+            <div class="bg-white p-8 rounded-xl shadow-md border border-gray-200">
+                <i class="ph-bold ph-file-arrow-down text-6xl text-red-500 mb-4 inline-block"></i>
+                <h1 class="text-3xl font-bold text-gray-900 mb-2">Compress PDF File</h1>
+                <p class="text-gray-500 mb-8">Reduce the file size of your PDF while optimizing for quality.</p>
+                
+                <!-- Upload Area -->
+                <div id="upload-area">
+                    <label for="pdf-file" id="file-drop-area" class="file-input-label flex flex-col items-center justify-center">
+                        <i class="ph-bold ph-upload-simple text-4xl text-gray-500 mb-2"></i>
+                        <span class="font-medium text-gray-700">Click to upload or drag and drop</span>
+                        <span class="text-sm text-gray-500">Select a PDF file to compress</span>
+                    </label>
+                    <input type="file" id="pdf-file" accept=".pdf" required class="sr-only">
+                    <div class="mt-4 flex justify-center gap-4">
+                        <button type="button" id="google-drive-btn" class="py-2 px-4 bg-white border border-gray-300 text-gray-700 font-semibold rounded-lg shadow-sm hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-400 flex items-center gap-2">
+                            <i class="ph-bold ph-google-logo"></i> Google Drive
+                        </button>
+                        <button type="button" id="dropbox-btn" class="py-2 px-4 bg-white border border-gray-300 text-gray-700 font-semibold rounded-lg shadow-sm hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-400 flex items-center gap-2">
+                            <i class="ph-bold ph-dropbox-logo"></i> Dropbox
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Compression Options Area -->
+                <div id="compression-options-area" class="hidden">
+                    <div id="file-preview-container" class="mb-6 flex justify-center">
+                        <!-- File preview will be inserted here -->
+                    </div>
+                    
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">Choose a compression level:</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-left">
+                        <div class="compression-option p-4 rounded-lg" data-level="extreme">
+                            <h4 class="font-bold text-lg">Extreme Compression</h4>
+                            <p class="text-sm text-gray-600">Less quality, high compression</p>
+                        </div>
+                        <div class="compression-option p-4 rounded-lg selected" data-level="recommended">
+                            <h4 class="font-bold text-lg">Recommended Compression</h4>
+                            <p class="text-sm text-gray-600">Good quality, good compression</p>
+                        </div>
+                        <div class="compression-option p-4 rounded-lg" data-level="less">
+                            <h4 class="font-bold text-lg">Less Compression</h4>
+                            <p class="text-sm text-gray-600">High quality, less compression</p>
+                        </div>
+                    </div>
+                    
+                    <button type="button" id="compress-pdf-btn" class="mt-6 w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-md shadow-sm text-lg font-medium text-white bg-[#4169e1] hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition">
+                        <span id="button-text">Compress PDF</span>
+                        <svg id="loading-spinner" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                    </button>
+                </div>
+                 <!-- Status/Error Message -->
+                <p id="status-message" class="text-red-500 mt-4 h-5"></p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-gray-400 mt-auto">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="flex flex-col sm:flex-row justify-between items-center text-center sm:text-left">
+                <div class="flex space-x-6 mb-4 sm:mb-0">
+                    <a href="#" class="hover:text-white transition">About Us</a>
+                    <a href="#" class="hover:text-white transition">Privacy Policy</a>
+                </div>
+                <div>
+                    <p>&copy; 2024 ToolKit. All Rights Reserved.</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript for PDF Compression Logic -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- CONFIGURATION ---
+            const GOOGLE_API_KEY = 'YOUR_GOOGLE_API_KEY';
+            const GOOGLE_CLIENT_ID = 'YOUR_GOOGLE_CLIENT_ID';
+
+            // --- DOM ELEMENTS ---
+            const fileInput = document.getElementById('pdf-file');
+            const fileDropArea = document.getElementById('file-drop-area');
+            const statusMessage = document.getElementById('status-message');
+            const uploadArea = document.getElementById('upload-area');
+            const compressionOptionsArea = document.getElementById('compression-options-area');
+            const filePreviewContainer = document.getElementById('file-preview-container');
+            const compressPdfBtn = document.getElementById('compress-pdf-btn');
+            const buttonText = document.getElementById('button-text');
+            const loadingSpinner = document.getElementById('loading-spinner');
+            const compressionOptions = document.querySelectorAll('.compression-option');
+            const googleDriveBtn = document.getElementById('google-drive-btn');
+            const dropboxBtn = document.getElementById('dropbox-btn');
+
+            let uploadedFile = null;
+            let compressionLevel = 'recommended';
+            let googleAuthToken = null;
+
+            const { pdfjsLib } = window;
+            if (pdfjsLib) {
+                pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js`;
+            }
+
+            const processFile = async (file) => {
+                if (!file || file.type !== 'application/pdf') {
+                    statusMessage.textContent = 'Please select a valid PDF file.';
+                    return;
+                }
+                uploadedFile = file;
+                uploadArea.classList.add('hidden');
+                compressionOptionsArea.classList.remove('hidden');
+                filePreviewContainer.innerHTML = '<p>Loading preview...</p>';
+                
+                try {
+                    const arrayBuffer = await file.arrayBuffer();
+                    const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+                    const pdf = await loadingTask.promise;
+                    const page = await pdf.getPage(1);
+                    
+                    const canvas = document.createElement('canvas');
+                    canvas.className = 'w-48 h-auto border rounded-md';
+                    const viewport = page.getViewport({ scale: 1 });
+                    const context = canvas.getContext('2d');
+                    canvas.height = viewport.height;
+                    canvas.width = viewport.width;
+                    page.render({ canvasContext: context, viewport });
+                    
+                    filePreviewContainer.innerHTML = '';
+                    filePreviewContainer.appendChild(canvas);
+
+                } catch (e) {
+                    statusMessage.textContent = 'Could not read the PDF file.';
+                    console.error(e);
+                    resetTool();
+                }
+            };
+
+            const resetTool = () => {
+                uploadArea.classList.remove('hidden');
+                compressionOptionsArea.classList.add('hidden');
+                fileInput.value = '';
+                uploadedFile = null;
+            };
+
+            fileInput.addEventListener('change', () => processFile(fileInput.files[0]));
+            fileDropArea.addEventListener('dragover', (e) => { e.preventDefault(); fileDropArea.classList.add('dragover'); });
+            fileDropArea.addEventListener('dragleave', () => fileDropArea.classList.remove('dragover'));
+            fileDropArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                fileDropArea.classList.remove('dragover');
+                if (e.dataTransfer.files.length > 0) {
+                    processFile(e.dataTransfer.files[0]);
+                }
+            });
+
+            compressionOptions.forEach(option => {
+                option.addEventListener('click', () => {
+                    compressionOptions.forEach(opt => opt.classList.remove('selected'));
+                    option.classList.add('selected');
+                    compressionLevel = option.dataset.level;
+                });
+            });
+
+            // --- CLOUD INTEGRATION LOGIC ---
+
+            googleDriveBtn.addEventListener('click', () => {
+                if (GOOGLE_API_KEY === 'YOUR_GOOGLE_API_KEY' || GOOGLE_CLIENT_ID === 'YOUR_GOOGLE_CLIENT_ID') {
+                    alert('Google Drive integration is not configured. Please add your API Key and Client ID.');
+                    return;
+                }
+                gapi.load('client:picker', () => {
+                    gapi.client.load('https://www.googleapis.com/discovery/v1/apis/drive/v3/rest')
+                        .then(() => {
+                            const tokenClient = google.accounts.oauth2.initTokenClient({
+                                client_id: GOOGLE_CLIENT_ID,
+                                scope: 'https://www.googleapis.com/auth/drive.readonly',
+                                callback: (tokenResponse) => {
+                                    googleAuthToken = tokenResponse.access_token;
+                                    createPicker();
+                                },
+                            });
+                            tokenClient.requestAccessToken();
+                        });
+                });
+            });
+
+            function createPicker() {
+                const view = new google.picker.View(google.picker.ViewId.DOCS);
+                view.setMimeTypes("application/pdf");
+                const picker = new google.picker.PickerBuilder()
+                    .setAppId(GOOGLE_CLIENT_ID.split('-')[0])
+                    .setOAuthToken(googleAuthToken)
+                    .setDeveloperKey(GOOGLE_API_KEY)
+                    .addView(view)
+                    .setCallback(pickerCallback)
+                    .build();
+                picker.setVisible(true);
+            }
+
+            async function pickerCallback(data) {
+                if (data[google.picker.Action.PICKED]) {
+                    statusMessage.textContent = 'Downloading file from Google Drive...';
+                    const doc = data[google.picker.Response.DOCUMENTS][0];
+                    const res = await fetch(`https://www.googleapis.com/drive/v3/files/${doc.id}?alt=media`, {
+                        headers: { 'Authorization': `Bearer ${googleAuthToken}` }
+                    });
+                    const blob = await res.blob();
+                    const file = new File([blob], doc.name, { type: 'application/pdf' });
+                    processFile(file);
+                    statusMessage.textContent = '';
+                }
+            }
+
+            dropboxBtn.addEventListener('click', () => {
+                Dropbox.choose({
+                    success: async (files) => {
+                        statusMessage.textContent = 'Downloading file from Dropbox...';
+                        const fileData = files[0];
+                        const res = await fetch(fileData.link);
+                        const blob = await res.blob();
+                        const file = new File([blob], fileData.name, { type: 'application/pdf' });
+                        processFile(file);
+                        statusMessage.textContent = '';
+                    },
+                    linkType: "direct",
+                    multiselect: false,
+                    extensions: ['.pdf'],
+                });
+            });
+
+            compressPdfBtn.addEventListener('click', async () => {
+                if (!uploadedFile) {
+                    statusMessage.textContent = 'Please upload a file first.';
+                    return;
+                }
+
+                buttonText.textContent = 'Compressing...';
+                loadingSpinner.classList.remove('hidden');
+                compressPdfBtn.disabled = true;
+
+                const formData = new FormData();
+                formData.append('pdf', uploadedFile);
+                formData.append('level', compressionLevel);
+
+                try {
+                    const response = await fetch('http://localhost:3000/compress', {
+                        method: 'POST',
+                        body: formData,
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`Server error: ${response.statusText}`);
+                    }
+
+                    const blob = await response.blob();
+                    const link = document.createElement('a');
+                    link.href = URL.createObjectURL(blob);
+                    link.download = `${uploadedFile.name.replace(/\.pdf$/i, '')}_compressed_ToolKit.pdf`;
+                    link.click();
+                    
+                    resetTool();
+
+                } catch (e) {
+                    statusMessage.textContent = 'An error occurred during compression.';
+                    console.error(e);
+                } finally {
+                    buttonText.textContent = 'Compress PDF';
+                    loadingSpinner.classList.add('hidden');
+                    compressPdfBtn.disabled = false;
+                }
+            });
+
+        });
+    </script>
+
+</body>
+</html>
